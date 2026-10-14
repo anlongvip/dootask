@@ -7,9 +7,8 @@ on:
     paths-ignore:
       - '.dockerignore'
       - 'docker/image/**'
-      - '.github/workflows/dootask-image.yml'
-      - '.github/workflows/publish.yml'
-      - '.github/scripts/image-regression.sh'
+      - '.github/workflows/**'
+      - '.github/scripts/**'
       - 'resources/ai-kb/**'
 
 jobs:

@@ -53,6 +53,8 @@ jobs:
         run: |
           cp .github/scripts/deployment-regression.sh "$RUNNER_TEMP/deployment-regression.sh"
           chmod +x "$RUNNER_TEMP/deployment-regression.sh"
+          # Forks do not necessarily contain the upstream release tags.
+          git show-ref --verify --quiet refs/tags/v1.8.64 || git fetch --no-tags https://github.com/kuaifan/dootask.git refs/tags/v1.8.64:refs/tags/v1.8.64
           git checkout -B pro v1.8.64
 
       - name: Install v1.8.64
@@ -97,6 +99,7 @@ jobs:
         run: |
           cp .github/scripts/deployment-regression.sh "$RUNNER_TEMP/deployment-regression.sh"
           chmod +x "$RUNNER_TEMP/deployment-regression.sh"
+          git show-ref --verify --quiet refs/tags/v1.6.89 || git fetch --no-tags https://github.com/kuaifan/dootask.git refs/tags/v1.6.89:refs/tags/v1.6.89
           git checkout -B pro v1.6.89
 
       - name: Install v1.6.89
