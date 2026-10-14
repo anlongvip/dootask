@@ -3,6 +3,11 @@ on:
   workflow_dispatch:
   push:
     branches: [pro]
+    paths-ignore:
+      - '.github/workflows/deployment-regression.yml'
+      - '.github/workflows/publish.yml'
+      - '.github/workflows/tests.yml'
+      - '.github/scripts/deployment-regression.sh'
 permissions:
   contents: read
   packages: write
