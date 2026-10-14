@@ -1,0 +1,49 @@
+name: Publish DooTask image
+on:
+  workflow_dispatch:
+  push:
+    branches: [pro]
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: dootask-image-pro
+  cancel-in-progress: false
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: docker/setup-buildx-action@v3
+      - name: Build candidate
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/image/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: dootask-candidate:ci
+          build-args: REVISION=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Fresh install and container update regression
+        run: bash .github/scripts/image-regression.sh
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish verified image
+        env:
+          IMAGE: ghcr.io/anlongvip/dootask
+        run: |
+          docker tag dootask-candidate:ci "$IMAGE:sha-$GITHUB_SHA"
+          docker tag dootask-candidate:ci "$IMAGE:latest"
+          docker push "$IMAGE:sha-$GITHUB_SHA"
+          docker push "$IMAGE:latest"
+      - name: Failure diagnostics
+        if: failure()
+        run: docker compose -f docker/image/compose.yml logs --no-color --tail=100 || true

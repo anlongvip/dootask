@@ -1,0 +1,103 @@
+name: ${DOOTASK_PROJECT:-dootask}
+services:
+  php:
+    image: ${DOOTASK_IMAGE:-ghcr.io/anlongvip/dootask:latest}
+    environment:
+      MODE: production
+      APP_URL: ${APP_URL:-http://localhost:2222}
+      APP_PORT: ${APP_PORT:-2222}
+      APP_ID: ${DOOTASK_PROJECT:-dootask}
+      DOOTASK_PROJECT: ${DOOTASK_PROJECT:-dootask}
+      VOLUME_PREFIX: ${VOLUME_PREFIX:-dootask}
+      DB_PASSWORD: ${DB_PASSWORD:?Set a random database password}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set a random database root password}
+    volumes:
+      - source:/var/www
+      - shared:/usr/share/dootask
+    depends_on:
+      mariadb: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:20000/health]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    restart: unless-stopped
+    networks: [extnetwork]
+  nginx:
+    image: nginx:alpine
+    environment:
+      APP_SCHEME: auto
+    ports:
+      - ${BIND_IP:-127.0.0.1}:${APP_PORT:-2222}:80
+    volumes:
+      - source:/var/www:ro
+    command: ["/bin/sh", "/var/www/docker/image/web-start.sh"]
+    depends_on:
+      php: {condition: service_healthy}
+      appstore: {condition: service_started}
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/health]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks: [extnetwork]
+  mariadb:
+    image: mariadb:10.7.3
+    environment:
+      MYSQL_DATABASE: dootask
+      MYSQL_USER: dootask
+      MYSQL_PREFIX: pre_
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set a random database password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set a random database root password}
+    command:
+      - --innodb-buffer-pool-size=256M
+      - --key-buffer-size=16M
+      - --query-cache-size=0
+      - --tmp-table-size=16M
+      - --max-heap-table-size=16M
+      - --max-connections=50
+    volumes:
+      - database:/var/lib/mysql
+    healthcheck:
+      test: [CMD, mysqladmin, ping, -h, localhost]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+    networks: [extnetwork]
+  redis:
+    image: redis:alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks: [extnetwork]
+  appstore:
+    image: dootask/appstore:0.6.0
+    environment:
+      HOST_PWD: /var/lib/docker/volumes/${VOLUME_PREFIX:-dootask}_source/_data
+      HOST_DOCKER_SOCK: /var/run/docker.sock
+    volumes:
+      - source:/var/www
+      - shared:/usr/share/dootask
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      php: {condition: service_healthy}
+    restart: unless-stopped
+    networks: [extnetwork]
+networks:
+  extnetwork:
+    name: dootask-networks-${DOOTASK_PROJECT:-dootask}
+volumes:
+  source: {name: '${VOLUME_PREFIX:-dootask}_source'}
+  database: {name: '${VOLUME_PREFIX:-dootask}_database'}
+  redis: {name: '${VOLUME_PREFIX:-dootask}_redis'}
+  shared: {name: '${VOLUME_PREFIX:-dootask}_shared'}

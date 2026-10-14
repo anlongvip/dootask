@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - "pro"
+    paths-ignore:
+      - '.dockerignore'
+      - 'docker/image/**'
+      - '.github/workflows/dootask-image.yml'
+      - '.github/workflows/publish.yml'
+      - '.github/scripts/image-regression.sh'
+      - 'resources/ai-kb/**'
 
 jobs:
   check-version:
