@@ -23,6 +23,8 @@ jobs:
         with:
           submodules: false
       - uses: docker/setup-buildx-action@v3
+      - name: Verify Alibaba Cloud build entrypoint
+        run: cmp Dockerfile docker/image/Dockerfile
       - name: Build candidate
         uses: docker/build-push-action@v6
         with:
@@ -44,6 +46,22 @@ jobs:
       - name: Publish verified image
         env:
           IMAGE: ghcr.io/anlongvip/dootask
+        run: |
+          docker tag dootask-candidate:ci "$IMAGE:sha-$GITHUB_SHA"
+          docker tag dootask-candidate:ci "$IMAGE:latest"
+          docker push "$IMAGE:sha-$GITHUB_SHA"
+          docker push "$IMAGE:latest"
+      - name: Login to Alibaba Cloud registry
+        if: vars.ACR_IMAGE != ''
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - name: Publish verified image to Alibaba Cloud
+        if: vars.ACR_IMAGE != ''
+        env:
+          IMAGE: ${{ vars.ACR_IMAGE }}
         run: |
           docker tag dootask-candidate:ci "$IMAGE:sha-$GITHUB_SHA"
           docker tag dootask-candidate:ci "$IMAGE:latest"

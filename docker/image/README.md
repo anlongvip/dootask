@@ -36,3 +36,14 @@ BIND_IP=127.0.0.1
 镜像部署关闭应用内的「系统更新」（`ONLINE_UPDATE=false`），统一在宝塔更新镜像。前端依赖锁定在 `docker/image/package-lock.json`；修改前端依赖时应同时更新该锁文件。
 
 这是 2GB 机器的低内存起步配置，不保证无限数量的网站或插件；部署后再根据实际内存占用调整。
+
+## 阿里云镜像仓库
+
+发布流程可将同一个通过安装和升级测试的镜像同时推送到阿里云 ACR。在 GitHub 仓库的 Actions 设置中添加：
+
+- Variables：`ACR_REGISTRY`（仓库登录域名）、`ACR_IMAGE`（完整镜像地址，不含标签）。
+- Secrets：`ACR_USERNAME`、`ACR_PASSWORD`（Registry 登录凭证，勿写入源码）。
+
+未配置 `ACR_IMAGE` 时只发布 GHCR。配置后两处都发布 `latest` 和 `sha-完整提交号`；不在服务器上重新构建。
+
+服务器编排环境文件设置 `DOOTASK_IMAGE=完整阿里云镜像地址:latest`，然后更新 `php` 服务。私有仓库需要先在宝塔中配置仓库登录凭证。切换仓库保留原有数据卷、数据库密码和应用 `.env`。
