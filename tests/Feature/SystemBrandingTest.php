@@ -15,12 +15,14 @@ class SystemBrandingTest extends TestCase
         Base::setting('system', [
             'system_alias' => 'Example Team',
             'login_logo' => 'uploads/user/picture/1/202609/example.png',
-        ], true);
+        ]);
 
         $response = $this->getJson('/api/system/setting')
             ->assertOk()
             ->assertJsonPath('ret', 1)
-            ->assertJsonPath('data.system_alias', 'Example Team');
+            ->assertJsonPath('data.system_alias', 'Example Team')
+            ->assertJsonPath('data.reg', 'open')
+            ->assertJsonPath('data.reg_identity', 'normal');
 
         $this->assertStringEndsWith(
             '/uploads/user/picture/1/202609/example.png',

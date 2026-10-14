@@ -138,6 +138,17 @@ class SystemController extends AbstractController
         } else {
             $setting = Base::setting('system');
         }
+        // Older or partial settings may lack keys; retain the defaults below
+        // without emitting undefined-key errors on the public login endpoint.
+        $setting += array_fill_keys([
+            'reg_invite', 'reg', 'reg_identity', 'temp_account_alias', 'login_code',
+            'password_policy', 'project_invite', 'chat_information', 'anon_message',
+            'convert_video', 'compress_video', 'e2e_message', 'msg_rev_limit', 'msg_edit_limit',
+            'auto_archived', 'archived_day', 'task_visible', 'all_group_mute', 'todo_set_permission',
+            'all_group_autoin', 'user_private_chat_mute', 'user_group_chat_mute', 'file_upload_limit',
+            'unclaimed_task_reminder', 'unclaimed_task_reminder_time', 'task_ai_auto_analyze',
+            'department_owner_project_view',
+        ], '');
         //
         if ($type == 'all' || $type == 'save') {
             User::auth('admin');
